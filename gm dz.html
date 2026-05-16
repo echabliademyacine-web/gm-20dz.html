@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>gm.dz – قهوتك مع الناس</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-weight: normal;  /* كله عادي مو غليض */
+        }
+
+        body {
+            background-color: #F3E5D8;  /* لون القهوة بالحليب */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #5C3A21;   /* بني */
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background-color: rgba(255, 248, 240, 0.9);
+            border-radius: 40px;
+            padding: 25px 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+
+        h1, h2, h3 {
+            font-weight: normal;
+            color: #8B5A2B;
+            text-align: center;
+        }
+
+        button, .btn-like, .btn-subscribe, .btn-share, .comment-btn {
+            background-color: #D9B48B;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 60px;
+            color: #4A2A1A;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
+            font-weight: normal;
+        }
+
+        button:hover {
+            background-color: #C29A6B;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #E2C7B0;
+            border-radius: 50px;
+            background: #FFFCF8;
+            font-size: 14px;
+            color: #5C3A21;
+            font-weight: normal;
+        }
+
+        .auth-box, .post-area, .feed {
+            margin-top: 25px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 35px;
+            padding: 18px;
+            margin-bottom: 25px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+
+        .post-img {
+            width: 100%;
+            max-height: 350px;
+            object-fit: cover;
+            border-radius: 28px;
+            margin: 12px 0;
+            background: #EFE0D0;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .comment-section {
+            margin-top: 12px;
+            border-top: 1px solid #F0DECC;
+            padding-top: 12px;
+        }
+
+        .comment-list {
+            font-size: 13px;
+            margin: 8px 0;
+            background: #FBF5ED;
+            border-radius: 30px;
+            padding: 10px;
+        }
+
+        .right-button {
+            text-align: left;   /* بما أننا dir RTL ، left هو الجهة اليمنى */
+            margin-bottom: 15px;
+        }
+
+        .camera-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .camera-box {
+            background: #2c1e12;
+            padding: 20px;
+            border-radius: 48px;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        video, canvas {
+            width: 100%;
+            border-radius: 32px;
+            background: black;
+            margin-bottom: 10px;
+        }
+
+        .filter-select {
+            margin: 10px;
+            padding: 8px;
+            border-radius: 40px;
+        }
+
+        .logout {
+            background-color: #B97F54;
+            color: white;
+            float: left;
+        }
+
+        hr {
+            border-color: #EBD9C8;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="app">
+    <!-- قسم التسجيل والدخول -->
+    <div id="authSection">
+        <h1>☕ gm.dz</h1>
+        <div class="card">
+            <h3>تسجيل الدخول أو حساب جديد</h3>
+            <input type="text" id="loginEmail" placeholder="البريد الإلكتروني أو رقم الهاتف">
+            <input type="password" id="loginPassword" placeholder="كلمة السر">
+            <button id="doLoginBtn">دخول</button>
+            <hr>
+            <h3>إنشاء حساب</h3>
+            <input type="text" id="regEmail" placeholder="بريد إلكتروني / هاتف">
+            <input type="password" id="regPassword" placeholder="كلمة السر">
+            <button id="sendCodeBtn">إرسال رمز التحقق</button>
+            <div id="codeVerifyDiv" style="display:none;">
+                <input type="text" id="verificationCode" placeholder="أدخل الرمز المكون من 4 أرقام">
+                <button id="verifyCodeBtn">تحقق وأكمل التسجيل</button>
+            </div>
+            <div id="regMessage" style="color:#aa6f3c;"></div>
+        </div>
+    </div>
+
+    <!-- القسم الرئيسي بعد الدخول (يظهر فقط بعد login) -->
+    <div id="mainApp" style="display:none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>☕ gm.dz</h1>
+            <button id="logoutBtn" class="logout">تسجيل خروج</button>
+        </div>
+        <p style="text-align:center;">صور قهوتك وأنشرها مع الكل</p>
+
+        <!-- زر الكاميرا على اليمين (mlfo9 3la la droite) -->
+        <div class="right-button">
+            <button id="openCameraBtn" style="font-size: 18px; padding: 12px 25px;">📸 تصوير قهوتك + فلتر</button>
+        </div>
+
+        <!-- التغذية (المنشورات) -->
+        <div id="feedContainer" class="feed"></div>
+    </div>
+</div>
+
+<!-- مودال الكاميرا والفلاتر -->
+<div id="cameraModal" class="camera-modal">
+    <div class="camera-box">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <div>
+            <select id="filterSelect">
+                <option value="none">بدون فلتر</option>
+                <option value="grayscale">أبيض وأسود</option>
+                <option value="sepia">سيبيا قديم</option>
+                <option value="brightness">سطوع خفيف</option>
+                <option value="contrast">تباين هادي</option>
+            </select>
+        </div>
+        <div>
+            <button id="captureBtn">📷 إلتقاط الصورة</button>
+            <button id="closeCameraBtn">إغلاق</button>
+        </div>
+        <div id="captionArea" style="display:none; margin-top:15px;">
+            <textarea id="postCaption" placeholder="اكتب وصف للقهوة... (مثلاً: قهوة الصباح ☕)"></textarea>
+            <button id="submitPostBtn">نشر الصورة + الوصف</button>
+        </div>
+        <img id="previewImg" style="width:100%; border-radius:30px; margin-top:10px; display:none;">
+    </div>
+</div>
+
+<script>
+    // ---------- STORAGE KEYS ----------
+    const STORAGE_USERS = "gm_users";
+    const STORAGE_POSTS = "gm_posts";
+    const STORAGE_CURRENT = "gm_currentUser";
+
+    let currentUser = null;
+    let pendingRegistration = null;   // {email, password}
+    let sentCode = null;
+
+    // Helper functions
+    function loadUsers() {
+        let users = localStorage.getItem(STORAGE_USERS);
+        return users ? JSON.parse(users) : [];
+    }
+    function saveUsers(users) {
+        localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+    }
+    function loadPosts() {
+        let posts = localStorage.getItem(STORAGE_POSTS);
+        return posts ? JSON.parse(posts) : [];
+    }
+    function savePosts(posts) {
+        localStorage.setItem(STORAGE_POSTS, JSON.stringify(posts));
+    }
+    function saveCurrentUser(user) {
+        localStorage.setItem(STORAGE_CURRENT, user ? JSON.stringify(user) : "");
+        currentUser = user;
+    }
+    function loadCurrentUser() {
+        let u = localStorage.getItem(STORAGE_CURRENT);
+        return u && u !== "" ? JSON.parse(u) : null;
+    }
+
+    // إضافة منشور جديد
+    function addPost(imageDataURL, captionText) {
+        if (!currentUser) return;
+        const posts = loadPosts();
+        const newPost = {
+            id: Date.now(),
+            userId: currentUser.email,
+            userDisplay: currentUser.email.split('@')[0],
+            image: imageDataURL,
+            caption: captionText || "☕ قهوتي",
+            likes: 0,
+            likedBy: [],
+            subscribers: 0,
+            subscribedBy: [],
+            comments: [],
+            createdAt: new Date().toISOString()
+        };
+        posts.unshift(newPost);
+        savePosts(posts);
+        renderFeed();
+    }
+
+    // like / subscribe / comment
+    function toggleLike(postId) {
+        let posts = loadPosts();
+        const post = posts.find(p => p.id == postId);
+        if (!post) return;
+        if (post.likedBy.includes(currentUser.email)) {
+            post.likedBy = post.likedBy.filter(u => u !== currentUser.email);
+            post.likes--;
+        } else {
+            post.likedBy.push(currentUser.email);
+            post.likes++;
+        }
+        savePosts(posts);
+        renderFeed();
+    }
+    function toggleSubscribe(postId) {
+        let posts = loadPosts();
+        const post = posts.find(p => p.id == postId);
+        if (!post) return;
+        if (post.subscribedBy.includes(currentUser.email)) {
+            post.subscribedBy = post.subscribedBy.filter(u => u !== currentUser.email);
+            post.subscribers--;
+        } else {
+            post.subscribedBy.push(currentUser.email);
+            post.subscribers++;
+        }
+        savePosts(posts);
+        renderFeed();
+    }
+    function addComment(postId, commentText) {
+        if (!commentText.trim()) return;
+        let posts = loadPosts();
+        const post = posts.find(p => p.id == postId);
+        if (post) {
+            post.comments.push({
+                user: currentUser.email.split('@')[0],
+                text: commentText,
+                time: new Date().toLocaleTimeString()
+            });
+            savePosts(posts);
+            renderFeed();
+        }
+    }
+    function shareToInstagram(postImg) {
+        // محاكاة المشاركة إلى إنستغرام
+        alert("📱 تمت المشاركة إلى Instagram (محاكاة)\nالصورة: " + postImg.substring(0,50)+"...");
+        // يمكن فتح نافذة وهمية لكن الأسهل تنبيه
+    }
+    function shareToSnap(postImg) {
+        alert("👻 تمت المشاركة إلى Snapchat (محاكاة)");
+    }
+
+    // عرض المنشورات مع الأزرار
+    function renderFeed() {
+        const feedDiv = document.getElementById("feedContainer");
+        if (!feedDiv) return;
+        const posts = loadPosts();
+        if (posts.length === 0) {
+            feedDiv.innerHTML = `<div class="card">✨ لا توجد صور بعد. اضغط على "تصوير قهوتك" لنشر أول صورة ☕</div>`;
+            return;
+        }
+        feedDiv.innerHTML = "";
+        posts.forEach(post => {
+            const postCard = document.createElement("div");
+            postCard.className = "card";
+            postCard.innerHTML = `
+                <div style="display:flex; justify-content:space-between;">
+                    <strong>👤 ${post.userDisplay}</strong>
+                    <small>${new Date(post.createdAt).toLocaleString()}</small>
+                </div>
+                <img src="${post.image}" class="post-img" alt="coffee photo">
+                <p>📝 ${escapeHtml(post.caption)}</p>
+                <div class="actions">
+                    <button class="btn-like" data-id="${post.id}">❤️ ${post.likes} إعجاب</button>
+                    <button class="btn-subscribe" data-id="${post.id}">🔔 ${post.subscribers} اشتراك</button>
+                    <button class="btn-share-ig" data-id="${post.id}">📸 مشاركة Instagram</button>
+                    <button class="btn-share-snap" data-id="${post.id}">👻 Snapchat</button>
+                </div>
+                <div class="comment-section">
+                    <div class="comment-list" id="comments-${post.id}">
+                        ${post.comments.map(c => `<div><strong>${escapeHtml(c.user)}</strong>: ${escapeHtml(c.text)}</div>`).join('') || "<i>لا تعليقات بعد</i>"}
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="commentInput-${post.id}" placeholder="اكتب تعليق..." style="flex:1;">
+                        <button class="comment-btn" data-id="${post.id}">نشر تعليق</button>
+                    </div>
+                </div>
+            `;
+            feedDiv.appendChild(postCard);
+        });
+
+        // ربط الأحداث
+        document.querySelectorAll('.btn-like').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                let id = parseInt(btn.getAttribute('data-id'));
+                toggleLike(id);
+            });
+        });
+        document.querySelectorAll('.btn-subscribe').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                let id = parseInt(btn.getAttribute('data-id'));
+                toggleSubscribe(id);
+            });
+        });
+        document.querySelectorAll('.btn-share-ig').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                let id = parseInt(btn.getAttribute('data-id'));
+                const post = loadPosts().find(p => p.id === id);
+                if(post) shareToInstagram(post.image);
+            });
+        });
+        document.querySelectorAll('.btn-share-snap').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                let id = parseInt(btn.getAttribute('data-id'));
+                const post = loadPosts().find(p => p.id === id);
+                if(post) shareToSnap(post.image);
+            });
+        });
+        document.querySelectorAll('.comment-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                let id = parseInt(btn.getAttribute('data-id'));
+                let input = document.getElementById(`commentInput-${id}`);
+                if(input) addComment(id, input.value);
+                if(input) input.value = '';
+            });
+        });
+    }
+
+    function escapeHtml(str) {
+        if(!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            if(m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // الكاميرا والفلاتر
+    let stream = null;
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const cameraModal = document.getElementById('cameraModal');
+    let capturedImageData = null;
+
+    async function startCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+            video.play();
+            applyFilterToVideo();
+        } catch(err) {
+            alert("لا يمكن الوصول إلى الكاميرا. تأكد من السماح أو استخدم هاتفك.");
+        }
+    }
+
+    function applyFilterToVideo() {
+        let filter = document.getElementById('filterSelect').value;
+        if(filter === 'grayscale') video.style.filter = 'grayscale(1)';
+        else if(filter === 'sepia') video.style.filter = 'sepia(1)';
+        else if(filter === 'brightness') video.style.filter = 'brightness(1.2)';
+        else if(filter === 'contrast') video.style.filter = 'contrast(1.3)';
+        else video.style.filter = 'none';
+    }
+
+    function capturePhoto() {
+        const context = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        // تطبيق نفس الفلتر على الـ canvas مؤقتاً
+        let filterVal = document.getElementById('filterSelect').value;
+        if(filterVal === 'grayscale') context.filter = 'grayscale(1)';
+        else if(filterVal === 'sepia') context.filter = 'sepia(1)';
+        else if(filterVal === 'brightness') context.filter = 'brightness(1.2)';
+        else if(filterVal === 'contrast') context.filter = 'contrast(1.3)';
+        else context.filter = 'none';
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        capturedImageData = canvas.toDataURL('image/jpeg', 0.9);
+        // إظهار معاينة ووصف
+        document.getElementById('previewImg').src = capturedImageData;
+        document.getElementById('previewImg').style.display = 'block';
+        document.getElementById('captionArea').style.display = 'block';
+        video.style.display = 'none';
+        document.getElementById('filterSelect').disabled = true;
+    }
+
+    function closeCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+        cameraModal.style.display = 'none';
+        video.style.display = 'block';
+        document.getElementById('captionArea').style.display = 'none';
+        document.getElementById('previewImg').style.display = 'none';
+        document.getElementById('filterSelect').disabled = false;
+        video.style.filter = 'none';
+    }
+
+    // زر النشر بعد التقاط الصورة
+    function submitPhotoPost() {
+        const caption = document.getElementById('postCaption').value;
+        if (capturedImageData) {
+            addPost(capturedImageData, caption);
+            closeCamera();
+            document.getElementById('postCaption').value = '';
+            capturedImageData = null;
+        } else {
+            alert("لم تلتقط صورة بعد");
+        }
+    }
+
+    // المصادقة والتسجيل
+    function initAuth() {
+        const storedUser = loadCurrentUser();
+        if(storedUser) {
+            currentUser = storedUser;
+            showMainApp();
+        } else {
+            document.getElementById('authSection').style.display = 'block';
+            document.getElementById('mainApp').style.display = 'none';
+        }
+    }
+
+    function showMainApp() {
+        document.getElementById('authSection').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        renderFeed();
+    }
+
+    // التسجيل برمز مكون من 4 أرقام
+    document.getElementById('sendCodeBtn')?.addEventListener('click', () => {
+        const email = document.getElementById('regEmail').value.trim();
+        const pwd = document.getElementById('regPassword').value;
+        if(!email || !pwd) {
+            document.getElementById('regMessage').innerText = "املأ البريد وكلمة السر";
+            return;
+        }
+        // توليد رمز عشوائي 4 أرقام
+        sentCode = Math.floor(1000 + Math.random() * 9000).toString();
+        pendingRegistration = { email, password: pwd };
+        alert(`رمز التحقق الخاص بك: ${sentCode}\n(في تطبيق حقيقي سيصلك بالرسائل)`);
+        document.getElementById('codeVerifyDiv').style.display = 'block';
+        document.getElementById('regMessage').innerText = "تم إرسال الرمز، أدخله بالأسفل";
+    });
+
+    document.getElementById('verifyCodeBtn')?.addEventListener('click', () => {
+        const entered = document.getElementById('verificationCode').value;
+        if(!pendingRegistration) {
+            alert("لم تطلب رمزاً بعد");
+            return;
+        }
+        if(entered === sentCode) {
+            let users = loadUsers();
+            const exists = users.find(u => u.email === pendingRegistration.email);
+            if(exists) {
+                document.getElementById('regMessage').innerText = "هذا البريد مسجل بالفعل، سجل دخول";
+                return;
+            }
+            const newUser = { email: pendingRegistration.email, password: pendingRegistration.password };
+            users.push(newUser);
+            saveUsers(users);
+            currentUser = newUser;
+            saveCurrentUser(currentUser);
+            showMainApp();
+            document.getElementById('codeVerifyDiv').style.display = 'none';
+            document.getElementById('regMessage').innerText = "تم التسجيل بنجاح!";
+        } else {
+            document.getElementById('regMessage').innerText = "الرمز غير صحيح، حاول مرة أخرى";
+        }
+    });
+
+    document.getElementById('doLoginBtn')?.addEventListener('click', () => {
+        const email = document.getElementById('loginEmail').value;
+        const pwd = document.getElementById('loginPassword').value;
+        const users = loadUsers();
+        const user = users.find(u => u.email === email && u.password === pwd);
+        if(user) {
+            currentUser = user;
+            saveCurrentUser(currentUser);
+            showMainApp();
+        } else {
+            alert("بريد أو كلمة سر غير صحيحة");
+        }
+    });
+
+    document.getElementById('logoutBtn')?.addEventListener('click', () => {
+        saveCurrentUser(null);
+        currentUser = null;
+        document.getElementById('authSection').style.display = 'block';
+        document.getElementById('mainApp').style.display = 'none';
+        document.getElementById('loginEmail').value = '';
+        document.getElementById('loginPassword').value = '';
+    });
+
+    // كاميرا وأزرار
+    document.getElementById('openCameraBtn')?.addEventListener('click', () => {
+        if(!currentUser) { alert("يجب تسجيل الدخول أولاً"); return; }
+        cameraModal.style.display = 'flex';
+        startCamera();
+    });
+    document.getElementById('closeCameraBtn')?.addEventListener('click', closeCamera);
+    document.getElementById('captureBtn')?.addEventListener('click', capturePhoto);
+    document.getElementById('submitPostBtn')?.addEventListener('click', submitPhotoPost);
+    document.getElementById('filterSelect')?.addEventListener('change', applyFilterToVideo);
+
+    // بداية التشغيل
+    initAuth();
+    // إعادة تحميل الفيد بعد تسجيل الدخول (تحديث عند التبديل)
+    window.renderFeed = renderFeed;
+</script>
+</body>
+</html>
